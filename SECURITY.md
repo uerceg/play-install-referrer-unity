@@ -12,4 +12,4 @@ Latest version of this plugin will always be the only currently supported one. I
 
 ## Reporting a Vulnerability
 
-In case you encounter any vulnerability or issue with the plugin, feel free to open [new issue](../../../issues/new) and report it.
+In case you encounter any vulnerability or issue with the plugin, feel free to open [new issue](../../issues/new) and report it.
