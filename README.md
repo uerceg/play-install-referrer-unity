@@ -106,6 +106,10 @@ Important thing to notice is that in order to work properly, Play Install Referr
 
 Play Install Referrer Library is added to **play-install-referrer** plugin as an [AAR library](./Assets/Android/installreferrer-2.1.aar) and it will automatically make sure that manifest file ends up with above mentioned permission added to it upon building your app.
 
+## Todos
+
+List of tasks to be done in this repository can be found in [here](./TODO.md).
+
 ## API reference
    * [PlayInstallReferrer class](#api-playinstallreferrer)
       * [GetInstallReferrerInfo](#api-pir-getinstallreferrerinfo)
