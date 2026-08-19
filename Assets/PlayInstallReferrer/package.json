@@ -1,0 +1,21 @@
+{
+  "name": "com.uerceg.play-install-referrer",
+  "version": "4.0.0",
+  "displayName": "Play Install Referrer",
+  "description": "Wrapper around Google's Play Install Referrer Library, offering basic functionality of obtaining Android referrer information from a Unity app.",
+  "unity": "2022.3",
+  "license": "MIT",
+  "author": {
+    "name": "Uglješa Erceg",
+    "url": "https://github.com/uerceg"
+  },
+  "keywords": [
+    "android",
+    "google-play",
+    "install-referrer",
+    "attribution"
+  ],
+  "documentationUrl": "https://github.com/uerceg/play-install-referrer-unity/blob/master/README.md",
+  "changelogUrl": "https://github.com/uerceg/play-install-referrer-unity/blob/master/CHANGELOG.md",
+  "licensesUrl": "https://github.com/uerceg/play-install-referrer-unity/blob/master/LICENSE"
+}
