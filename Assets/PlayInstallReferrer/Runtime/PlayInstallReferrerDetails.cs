@@ -2,8 +2,8 @@
 //  PlayInstallReferrerDetails.cs
 //  PlayInstallReferrer
 //
-//  Created by Uglješa Erceg (@ugi) on 12th April 2020.
-//  Copyright © 2020 Uglješa Erceg. All rights reserved.
+//  Created by Uglješa Erceg (@uerceg) on 12th April 2020.
+//  Copyright © 2020-Present Uglješa Erceg. All rights reserved.
 //
 
 using System;

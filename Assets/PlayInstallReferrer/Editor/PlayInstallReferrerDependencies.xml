@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<dependencies>
+    <androidPackages>
+        <androidPackage spec="com.android.installreferrer:installreferrer:2.2">
+        </androidPackage>
+    </androidPackages>
+</dependencies>

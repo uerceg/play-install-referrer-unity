@@ -1,0 +1,19 @@
+# Keep rules required by the play-install-referrer plugin.
+#
+# The plugin reaches the Play Install Referrer Library purely by name over JNI
+# (see PlayInstallReferrerAndroid.cs), so R8/ProGuard sees no Java caller and is
+# free to rename or remove those classes. The library ships no consumer keep
+# rules of its own in any version, so they have to be declared here.
+#
+# Without these rules a build with "Minify" enabled fails at runtime with:
+#   java.lang.NoSuchMethodError: no static method with name='newBuilder'
+#
+# Copy the rules below into Assets/Plugins/Android/proguard-user.txt of your
+# project. Unity appends that file to the rules it hands to R8 whenever it is
+# present, so no Player Settings toggle is required for it to take effect.
+#
+# Unity's own default rules already cover com.unity3d.player.* and set
+# -ignorewarnings, so nothing beyond the two rules below is needed.
+
+-keep class com.android.installreferrer.** { *; }
+-keep interface com.android.installreferrer.** { *; }
