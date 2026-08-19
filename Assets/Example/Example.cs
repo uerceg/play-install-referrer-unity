@@ -2,129 +2,163 @@
 //  Example.cs
 //  PlayInstallReferrer
 //
-//  Created by Uglješa Erceg (@ugi) on 12th April 2020.
-//  Copyright © 2020 Uglješa Erceg. All rights reserved.
+//  Created by Uglješa Erceg (@uerceg) on 12th April 2020.
+//  Copyright © 2020-Present Uglješa Erceg. All rights reserved.
 //
 
 using System;
-using System.Text;
-using System.Collections;
-using System.Runtime.InteropServices;
 using UnityEngine;
-using UnityEngine.UI;
 using Ugi.PlayInstallReferrerPlugin;
 
 public class Example : MonoBehaviour
 {
-    private string txtInstallReferrer;
-    private string txtReferrerClickTimestamp;
-    private string txtInstallBeginTimestamp;
-    private string txtReferrerClickTimestampServer;
-    private string txtInstallBeginTimestampServer;
-    private string txtInstallVersion;
-    private string txtGooglePlayInstant;
+    // same palette as uerceg.github.io
+    private static readonly Color Background = new Color32(0x00, 0x00, 0x00, 0xFF);
+    private static readonly Color Green = new Color32(0xAF, 0xFF, 0xA6, 0xFF);
+    private static readonly Color Blue = new Color32(0xA4, 0xFF, 0xFF, 0xFF);
+    private static readonly Color Dim = new Color32(0x77, 0x77, 0x77, 0xFF);
+    private static readonly Color Danger = new Color32(0xFF, 0x8A, 0x80, 0xFF);
 
-    private string txtInstallReferrerFromCallback;
-    private string txtReferrerClickTimestampFromCallback;
-    private string txtInstallBeginTimestampFromCallback;
-    private string txtReferrerClickTimestampServerFromCallback;
-    private string txtInstallBeginTimestampServerFromCallback;
-    private string txtInstallVersionFromCallback;
-    private string txtGooglePlayInstantFromCallback;
+    private Texture2D pixel;
+    private Font mono;
 
-    void Awake()
+    private GUIStyle titleStyle, subtitleStyle, buttonStyle, keyStyle, valueStyle, errorStyle;
+    private bool stylesReady;
+
+    private PlayInstallReferrerDetails details;
+    private bool waiting;
+
+    private void OnDestroy()
     {
-        AndroidJNIHelper.debug = true;
-
-        txtInstallReferrer = "Install referrer: ";
-        txtReferrerClickTimestamp = "Referrer click timestamp: ";
-        txtInstallBeginTimestamp = "Install begin timestamp: ";
-        txtReferrerClickTimestampServer = "Referrer click server timestamp: ";
-        txtInstallBeginTimestampServer = "Install begin server timestamp: ";
-        txtInstallVersion = "Install version: ";
-        txtGooglePlayInstant = "Google Play instant: ";
+        Destroy(pixel);
+        Destroy(mono);
     }
 
-    void OnGUI()
+    private float Unit { get { return Mathf.Max(Screen.width, Screen.height) / 100f; } }
+
+    private void BuildStyles()
     {
-        var styleLabel = GUI.skin.GetStyle("Label");
-        styleLabel.alignment = TextAnchor.MiddleCenter;
-        styleLabel.fontSize = 50;
+        pixel = new Texture2D(1, 1);
+        pixel.SetPixel(0, 0, Color.white);
+        pixel.Apply();
 
-        GUI.Label(new Rect(0, Screen.height / 2 + 600, Screen.width, 100), txtGooglePlayInstantFromCallback, styleLabel);
-        GUI.Label(new Rect(0, Screen.height / 2 + 500, Screen.width, 100), txtGooglePlayInstant, styleLabel);
-        GUI.Label(new Rect(0, Screen.height / 2 + 400, Screen.width, 100), txtInstallVersionFromCallback, styleLabel);
-        GUI.Label(new Rect(0, Screen.height / 2 + 300, Screen.width, 100), txtInstallVersion, styleLabel);
-        GUI.Label(new Rect(0, Screen.height / 2 + 200, Screen.width, 100), txtInstallBeginTimestampServerFromCallback, styleLabel);
-        GUI.Label(new Rect(0, Screen.height / 2 + 100, Screen.width, 100), txtInstallBeginTimestampServer, styleLabel);
-        GUI.Label(new Rect(0, Screen.height / 2 + 0, Screen.width, 100), txtReferrerClickTimestampServerFromCallback, styleLabel);
-        GUI.Label(new Rect(0, Screen.height / 2 - 100, Screen.width, 100), txtReferrerClickTimestampServer, styleLabel);
-        GUI.Label(new Rect(0, Screen.height / 2 - 200, Screen.width, 100), txtInstallBeginTimestampFromCallback, styleLabel);
-        GUI.Label(new Rect(0, Screen.height / 2 - 300, Screen.width, 100), txtInstallBeginTimestamp, styleLabel);
-        GUI.Label(new Rect(0, Screen.height / 2 - 400, Screen.width, 100), txtReferrerClickTimestampFromCallback, styleLabel);
-        GUI.Label(new Rect(0, Screen.height / 2 - 500, Screen.width, 100), txtReferrerClickTimestamp, styleLabel);
-        GUI.Label(new Rect(0, Screen.height / 2 - 600, Screen.width, 100), txtInstallReferrerFromCallback, styleLabel);
-        GUI.Label(new Rect(0, Screen.height / 2 - 700, Screen.width, 100), txtInstallReferrer, styleLabel);
+        int body = Mathf.RoundToInt(Unit * 1.5f);
+        mono = Font.CreateDynamicFontFromOSFont(
+            new[] { "Source Code Pro", "DroidSansMono", "Droid Sans Mono", "Courier New", "monospace" }, body);
 
-        var styleButton = GUI.skin.GetStyle("Button");
-        styleButton.alignment = TextAnchor.MiddleCenter;
-        styleButton.fontSize = 50;
+        titleStyle = Style(Mathf.RoundToInt(Unit * 2.0f), Green, FontStyle.Bold);
+        subtitleStyle = Style(Mathf.RoundToInt(Unit * 1.3f), Dim, FontStyle.Normal);
+        keyStyle = Style(Mathf.RoundToInt(Unit * 1.4f), Dim, FontStyle.Normal);
+        valueStyle = Style(body, Blue, FontStyle.Bold);
+        errorStyle = Style(body, Danger, FontStyle.Bold);
 
-        if (GUI.Button(new Rect(100, Screen.height / 2 + 700, Screen.width - 200, 160), "Get install referrer details", styleButton))
+        buttonStyle = Style(Mathf.RoundToInt(Unit * 1.7f), Green, FontStyle.Bold);
+        buttonStyle.alignment = TextAnchor.MiddleLeft;
+        buttonStyle.wordWrap = false;
+        buttonStyle.hover.textColor = Green;
+        buttonStyle.active.textColor = Green;
+
+        stylesReady = true;
+    }
+
+    private GUIStyle Style(int size, Color color, FontStyle fontStyle)
+    {
+        var s = new GUIStyle { fontSize = size, wordWrap = true, fontStyle = fontStyle };
+        if (mono != null) s.font = mono;
+        s.normal.textColor = color;
+        return s;
+    }
+
+    private void OnGUI()
+    {
+        if (!stylesReady) BuildStyles();
+
+        Fill(new Rect(0, 0, Screen.width, Screen.height), Background);
+
+        // start below the status bar / notch, never under it
+        Rect safe = Screen.safeArea;
+        float top = (Screen.height - safe.yMax) + Unit * 3f;
+        float side = Unit * 3f;
+        float x = safe.x + side;
+        float width = safe.width - side * 2f;
+
+        float y = top;
+        y += Line(new Rect(x, y, width, 0f), "# play install referrer", titleStyle);
+        y += Unit * 1.2f;
+        y += Line(new Rect(x, y, width, 0f),
+            waiting ? "reading..." : "tap to read the install referrer", subtitleStyle);
+
+        y += Unit * 3f;
+        string label = waiting ? "[ working ]" : "[ get install referrer ]";
+        float buttonH = buttonStyle.CalcHeight(new GUIContent(label), width) + Unit * 1.6f;
+        GUI.enabled = !waiting;
+        if (GUI.Button(new Rect(x, y, width, buttonH), label, buttonStyle)) Read();
+        GUI.enabled = true;
+        y += buttonH + Unit * 3f;
+
+        if (details == null)
         {
-            PlayInstallReferrer.GetInstallReferrerInfo((installReferrerDetails) =>
-            {
-                Debug.Log("Install referrer details received!");
-
-                // check for error
-                if (installReferrerDetails.Error != null)
-                {
-                    Debug.LogError("Error occurred!");
-                    if (installReferrerDetails.Error.Exception != null)
-                    {
-                        Debug.LogError("Exception message: " + installReferrerDetails.Error.Exception.Message);
-                    }
-                    Debug.LogError("Response code: " + installReferrerDetails.Error.ResponseCode.ToString());
-                    return;
-                }
-
-                // print install referrer details
-                if (installReferrerDetails.InstallReferrer != null)
-                {
-                    txtInstallReferrerFromCallback = installReferrerDetails.InstallReferrer;
-                    Debug.Log("Install referrer: " + installReferrerDetails.InstallReferrer);
-                }
-                if (installReferrerDetails.ReferrerClickTimestampSeconds != null)
-                {
-                    txtReferrerClickTimestampFromCallback = installReferrerDetails.ReferrerClickTimestampSeconds.ToString();
-                    Debug.Log("Referrer click timestamp: " + installReferrerDetails.ReferrerClickTimestampSeconds);
-                }
-                if (installReferrerDetails.InstallBeginTimestampSeconds != null)
-                {
-                    txtInstallBeginTimestampFromCallback = installReferrerDetails.InstallBeginTimestampSeconds.ToString();
-                    Debug.Log("Install begin timestamp: " + installReferrerDetails.InstallBeginTimestampSeconds);
-                }
-                if (installReferrerDetails.ReferrerClickTimestampServerSeconds != null)
-                {
-                    txtReferrerClickTimestampServerFromCallback = installReferrerDetails.ReferrerClickTimestampServerSeconds.ToString();
-                    Debug.Log("Referrer click server timestamp: " + installReferrerDetails.ReferrerClickTimestampServerSeconds);
-                }
-                if (installReferrerDetails.InstallBeginTimestampServerSeconds != null)
-                {
-                    txtInstallBeginTimestampServerFromCallback = installReferrerDetails.InstallBeginTimestampServerSeconds.ToString();
-                    Debug.Log("Install begin server timestamp: " + installReferrerDetails.InstallBeginTimestampServerSeconds);
-                }
-                if (installReferrerDetails.InstallVersion != null)
-                {
-                    txtInstallVersionFromCallback = installReferrerDetails.InstallVersion;
-                    Debug.Log("Install version: " + installReferrerDetails.InstallVersion);
-                }
-                if (installReferrerDetails.GooglePlayInstant != null)
-                {
-                    txtGooglePlayInstantFromCallback = installReferrerDetails.GooglePlayInstant.ToString();
-                    Debug.Log("Google Play instant: " + installReferrerDetails.GooglePlayInstant);
-                }
-            });
+            Line(new Rect(x, y, width, 0f), waiting ? "> waiting for callback" : "> nothing read yet", keyStyle);
+            return;
         }
+
+        if (details.Error != null)
+        {
+            string msg = "> error, response code " + details.Error.ResponseCode;
+            if (details.Error.Exception != null) msg += "\n  " + details.Error.Exception.Message;
+            Line(new Rect(x, y, width, 0f), msg, errorStyle);
+            return;
+        }
+
+        y += Field(x, y, width, "install referrer", details.InstallReferrer);
+        y += Field(x, y, width, "referrer click", details.ReferrerClickTimestampSeconds.ToString());
+        y += Field(x, y, width, "install begin", details.InstallBeginTimestampSeconds.ToString());
+        y += Field(x, y, width, "referrer click (server)", details.ReferrerClickTimestampServerSeconds.ToString());
+        y += Field(x, y, width, "install begin (server)", details.InstallBeginTimestampServerSeconds.ToString());
+        y += Field(x, y, width, "install version", details.InstallVersion);
+        y += Field(x, y, width, "google play instant", details.GooglePlayInstant.ToString());
+    }
+
+    // draws a label at its natural height and returns that height
+    private float Line(Rect rect, string text, GUIStyle style)
+    {
+        float h = style.CalcHeight(new GUIContent(text), rect.width);
+        GUI.Label(new Rect(rect.x, rect.y, rect.width, h), text, style);
+        return h;
+    }
+
+    private float Field(float x, float y, float width, string key, string value)
+    {
+        float h = Line(new Rect(x, y, width, 0f), key, keyStyle);
+        h += Unit * 1f;
+        h += Line(new Rect(x, y + h, width, 0f), string.IsNullOrEmpty(value) ? "-" : value, valueStyle);
+        return h + Unit * 2.4f;
+    }
+
+    private void Read()
+    {
+        waiting = true;
+        details = null;
+        PlayInstallReferrer.GetInstallReferrerInfo(result =>
+        {
+            waiting = false;
+            details = result;
+            if (result == null) { Debug.LogError("No install referrer details delivered"); return; }
+            if (result.Error != null)
+            {
+                Debug.LogError("Install referrer error, response code: " + result.Error.ResponseCode);
+                if (result.Error.Exception != null) Debug.LogError(result.Error.Exception);
+                return;
+            }
+            Debug.Log("Install referrer: " + result.InstallReferrer);
+        });
+    }
+
+    private void Fill(Rect r, Color c)
+    {
+        Color old = GUI.color;
+        GUI.color = c;
+        GUI.DrawTexture(r, pixel);
+        GUI.color = old;
     }
 }
