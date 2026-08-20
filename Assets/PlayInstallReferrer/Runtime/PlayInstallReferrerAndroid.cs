@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading;
 using UnityEngine;
 using UnityEngine.Scripting;
 
@@ -23,6 +24,9 @@ namespace Ugi.PlayInstallReferrerPlugin
 
         // response code for failing to construct the client at all
         private const int ResponseServiceUnavailable = 1;
+
+        // InstallReferrerResponse.SERVICE_DISCONNECTED
+        private const int ResponseServiceDisconnected = -1;
 
         // public API
         public static void GetInstallReferrerInfo(Action<PlayInstallReferrerDetails> callback)
@@ -73,6 +77,12 @@ namespace Ugi.PlayInstallReferrerPlugin
         {
             private AndroidJavaObject ajoInstallReferrerClient;
             private Action<PlayInstallReferrerDetails> callback;
+
+            // the callback is pinged exactly once per call - the service can report a
+            // disconnect after details have already been delivered, and that must not
+            // arrive as an error on top of a successful read. these callbacks come in
+            // from Java threads, hence Interlocked rather than a plain bool
+            private int delivered;
 
             public InstallReferrerStateListener(AndroidJavaObject pInstallReferrerClient, Action<PlayInstallReferrerDetails> pCallback) : base("com.android.installreferrer.api.InstallReferrerStateListener")
             {
@@ -166,10 +176,20 @@ namespace Ugi.PlayInstallReferrerPlugin
             public void onInstallReferrerServiceDisconnected()
             {
                 Debug.Log("onInstallReferrerServiceDisconnected invoked");
+
+                // if this arrives before anything was delivered, nothing else is going to
+                // fire, so report it rather than leaving the callback waiting forever
+                PingClientCallback(new PlayInstallReferrerDetails(new PlayInstallReferrerError(
+                    ResponseServiceDisconnected, new Exception("Connection to install referrer service was lost"))));
             }
 
             private void PingClientCallback(PlayInstallReferrerDetails installReferrerDetails)
             {
+                if (Interlocked.CompareExchange(ref delivered, 1, 0) != 0)
+                {
+                    return;
+                }
+
                 try
                 {
                     ajoInstallReferrerClient.Call("endConnection");

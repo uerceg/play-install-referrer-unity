@@ -7,7 +7,7 @@
     </tr>
     <tr>
         <td align="left">Current version:</td>
-        <td align="left"><b>4.0.0</b></td>
+        <td align="left"><b>4.0.1</b></td>
     </tr>
     <tr>
         <td align="left">Unity IDE support:</td>
@@ -15,7 +15,7 @@
     </tr>
     <tr>
         <td align="left">Latest release:</td>
-        <td align="left"><a href=../../releases/tag/v4.0.0><b>Download</b></a></td>
+        <td align="left"><a href=../../releases/tag/v4.0.1><b>Download</b></a></td>
     </tr>
     <tr>
         <td align="left">Troubles?</td>
