@@ -1,3 +1,10 @@
+### Version 4.0.1 [20th August 2026]
+#### Fixed
+- Reported a lost connection to the install referrer service through the callback. `onInstallReferrerServiceDisconnected` only logged, so a disconnect arriving before details had been delivered left the callback waiting forever.
+- Pinged the callback exactly once per call. The service can report a disconnect after details have already been delivered, which used to be possible on top of a successful read.
+
+---
+
 ### Version 4.0.0 [20th August 2026]
 #### Added
 - Added R8 / ProGuard keep rules needed by the plugin, together with a **Minification** chapter in README explaining them (https://github.com/uerceg/play-install-referrer-unity/issues/2).
